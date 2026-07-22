@@ -90,14 +90,17 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         else:
             forecasts = self.coordinator.data.forecasts
             filtered_time = self.filter_forecasts(forecasts)
+            LOGGER.debug("Found forecasts in time range: %2", filtered_time)
             
             temp_min = self._entry.data.get(CONFID_TEMP_MIN)
             temp_max = self._entry.data.get(CONFID_TEMP_MAX)
+            LOGGER.debug("Filtering for temperatures between %s and %s", temp_min, temp_max)
             filtered_temp = [
                 forecast
                 for forecast in filtered_time
                 if (((temp_max is None) or (forecast.get(ATTR_FORECAST_TEMP) < temp_max)) and ((temp_min is None) or (forecast.get(ATTR_FORECAST_TEMP) >= temp_min)))
             ]
+            LOGGER.debug("Found forecasts in temp range: %2", filtered_temp)
             self._attr_on = len(filtered_temp) > 0
         self.async_write_ha_state()
 
