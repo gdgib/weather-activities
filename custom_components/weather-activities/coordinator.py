@@ -28,7 +28,7 @@ class WeatherActivitiesDataCoordinator(DataUpdateCoordinator):
         super().__init__(
             hass,
             LOGGER,
-            name=f"{DOMAIN} ({self._entry.unique_id})"
+            name=f"{DOMAIN} ({self._entry.unique_id})",
             update_method=self.async_update_data,
         )
 
