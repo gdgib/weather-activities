@@ -5,6 +5,7 @@ from homeassistant import config_entries
 
 from .const import (
     DOMAIN,
+    WEATHER_DOMAIN,
     CONFID_WEATHER_ENTITY,
     CONFID_FORECAST_DAYS,
     CONFDF_NAME,
