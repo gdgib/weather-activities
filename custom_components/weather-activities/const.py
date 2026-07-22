@@ -1,7 +1,6 @@
 """Constants for the weather-activities integration."""
 
 DOMAIN = "weather-activities"
-WEATHER_DOMAIN = "weather"
 PLATFORMS = []
 
 CONFID_WEATHER_ENTITY = "weather_entity"
