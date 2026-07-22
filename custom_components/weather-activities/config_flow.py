@@ -15,8 +15,12 @@ from .const import (
     DOMAIN,
     CONFID_WEATHER_ENTITY,
     CONFID_FORECAST_DAYS,
+    CONFID_TEMP_MIN,
+    CONFID_TEMP_MAX,
     CONFDF_NAME,
     CONFDF_FORECAST_DAYS,
+    CONFDF_TEMP_MIN,
+    CONFDF_TEMP_MAX,
 )
 
 LOGGER = logging.getLogger(__name__)
