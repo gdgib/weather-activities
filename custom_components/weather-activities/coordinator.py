@@ -49,12 +49,12 @@ class WeatherActivitiesDataCoordinator(DataUpdateCoordinator):
     async def async_update_data(self):
         """Fetch the data."""
         forecasts = await self.get_forecasts(self._entry.data.get(CONFID_WEATHER_ENTITY))
-        return CoordinatorData(true, forecasts)
+        return CoordinatorData(True, forecasts)
 
     async def _async_entity_state_changed(self, event):
         """Update the coordinator data, because the entity state changed."""
         forecasts = await self.get_forecasts(self._entry.data.get(CONFID_WEATHER_ENTITY))
-        self.async_set_updated_data(CoordinatorData(true, forecasts))
+        self.async_set_updated_data(CoordinatorData(True, forecasts))
 
     async def get_forecasts(self, entity_id: str) -> list:
         """Get the forecasts from the weather entity."""
