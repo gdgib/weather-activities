@@ -23,5 +23,13 @@
         }
       }
     }
+  },
+  "entity": {
+    "binary_sensor": {
+      "weather_activities perday": {
+        "state_attributes": {
+        }
+      }
+    }
   }
 }
