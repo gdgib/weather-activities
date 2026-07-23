@@ -258,7 +258,7 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
             day_start_time = hadt.parse_time("00:00:00")
         
         now = hadt.now()
-        day_start_datetime = dt.combine(now.date(), day_start_time, now.tzinfo)
+        day_start_datetime = dt.datetime.combine(now.date(), day_start_time, now.tzinfo)
         
         time_start = day_start_datetime + dt.timedelta(hours=24 * self._day)
         time_end = day_start_datetime + dt.timedelta(hours=24 * (self._day + 1))
