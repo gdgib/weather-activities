@@ -15,6 +15,7 @@ from homeassistant.components.weather import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity import generate_entity_id
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as hadt
@@ -73,6 +74,7 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         self._name = self._activity_name + " Day " + str(self._day)
         self._key = re.sub(r'[-\s]+', '_', self._name).lower()
         
+        self.entity_id = generate_entity_id("binary_sensor.{}_{}", DOMAIN, self._key)
         self.entity_description = BinarySensorEntityDescription(
             key=self._key,
             icon=ICON_OFF,
@@ -88,6 +90,11 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
     def device_info(self) -> DeviceInfo:
         """Get the device information."""
         return self._device_info
+
+    @property
+    def unique_id(self) -> str:
+        """Get the unique id."""
+        return f"{DOMAIN}-{self._key}"
 
     @property
     def name(self) -> str:
