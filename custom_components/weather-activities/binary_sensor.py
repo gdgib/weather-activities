@@ -211,7 +211,7 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
             return []
         return filtered_dd
     
-    def explain_mismatch(self, forecast) -> str:
+    def explain_mismatch(self, , check_time_start: bool = False, check_time_end: bool = False) -> str:
         if forecast is None:
             return "no future forecast found"
         
@@ -224,8 +224,8 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         if (temp_max is not None) and (temp_actual >= temp_max):
             explanations.append(f"temp {temp_actual}>={temp_max}")
         
-        time_start = hadt.parse_time(self._entry.data.get(CONFID_TIME_START))
-        time_end = hadt.parse_time(self._entry.data.get(CONFID_TIME_END))
+        time_start = hadt.parse_time(self._entry.data.get(CONFID_TIME_START)) if check_time_start else None
+        time_end = hadt.parse_time(self._entry.data.get(CONFID_TIME_END)) if check_time_end else None
         time: dt.time = hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME)).time()
         if (time_start is not None) and (time < time_start):
             explanations.append(f"time {time}<{time_start}")
@@ -287,12 +287,12 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
                     hours_prev = hours_current
                 else:
                     explanation = self.explain_mismatch(next((forecast for forecast in forecasts if hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME)) == hours_prev + dt.timedelta(hours=1)), None))
-                    hours_ranges.append(hours_start.strftime("%H:%M") + " to " + hours_prev.strftime("%H:%M") + " because " + explanation)
+                    hours_ranges.append(hours_start.strftime("%H:%M") + " to " + (hours_prev + timedelta(minutes=59)).strftime("%H:%M") + " because " + explanation)
                     hours_start = hours_current
                     hours_prev = hours_current
             if hours_start is not None:
                 explanation = self.explain_mismatch(next((forecast for forecast in forecasts if hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME)) == hours_prev + dt.timedelta(hours=1)), None))
-                hours_ranges.append(hours_start.strftime("%H:%M") + " to " + hours_prev.strftime("%H:%M") + " because " + explanation)
+                hours_ranges.append(hours_start.strftime("%H:%M") + " to " + (hours_prev + timedelta(minutes=59)).strftime("%H:%M") + " because " + explanation)
             
             self._attr_extra_state_attributes = {
                 ATTR_HRS_COUNT: len(filtered_activity),
@@ -302,14 +302,27 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
                 ATTR_TEMP_MAX: max(filtered_activity, key=lambda f: f.get(ATTR_FORECAST_TEMP)).get(ATTR_FORECAST_TEMP) if self._attr_on else None,
             }
     
+    def match_forecast_time(self, forecast, time_start: dt.time | None, time_end: dt.time | None):
+        actual: dt.datetime = hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME))
+        
+        now = hadt.now()
+        datetime_start: dt.datetime = (dt.datetime.combine(now.date(), time_start, now.tzinfo) + dt.timedelta(hours=24 * self._day)) if time_start is not None else None
+        datetime_end: dt.datetime = (dt.datetime.combine(now.date(), time_end, now.tzinfo) + dt.timedelta(hours=24 * (self._day + (1 if time_end < time_start else 0)))) if time_end is not None else None
+        
+        if (datetime_start is not None) and (actual < datetime_start):
+            return False
+        if (datetime_end is not None) and (actual >= datetime_end):
+            return False
+        return True
+    
     def filter_forecasts_by_day(self, forecasts: list) -> list:
         """Filter forecasts down to those valid for this sensor."""
-        time_start = hadt.parse_time(self._entry.data.get(CONFID_TIME_START))
-        time_end = hadt.parse_time(self._entry.data.get(CONFID_TIME_END))
-        if time_start is not None:
-            day_start_time = time_start
-        elif time_end is not None:
-            day_start_time = time_end
+        conf_time_start = hadt.parse_time(self._entry.data.get(CONFID_TIME_START))
+        conf_time_end = hadt.parse_time(self._entry.data.get(CONFID_TIME_END))
+        if conf_time_start is not None:
+            day_start_time = conf_time_start
+        elif conf_time_end is not None:
+            day_start_time = conf_time_end
         else:
             day_start_time = hadt.parse_time("00:00:00")
         
