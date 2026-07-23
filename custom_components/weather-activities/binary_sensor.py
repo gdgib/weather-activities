@@ -35,6 +35,8 @@ from .const import (
     ICON_ON,
     ICON_OFF,
     ATTR_HRS_COUNT,
+    ATTR_HRS_RANGES,
+    ATTR_HRS_LIST,
     ATTR_DAYS_COUNT,
     ATTR_TEMP_MIN,
     ATTR_TEMP_MAX,
@@ -208,6 +210,33 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         if (hrs_min is not None) and len(filtered_dd) < hrs_min:
             return []
         return filtered_dd
+    
+    def explain_mismatch(self, forecast) -> str:
+        explanations = []
+        temp_min = self._entry.data.get(CONFID_TEMP_MIN)
+        temp_max = self._entry.data.get(CONFID_TEMP_MAX)
+        temp_actual = forecast.get(ATTR_FORECAST_TEMP)
+        if (temp_min is not None) and (temp_actual < temp_min):
+            explanations.append(f"temp {temp_actual}<{temp_min}")
+        if (temp_max is not None) and (temp_actual >= temp_max):
+            explanations.append(f"temp {temp_actual}>={temp_max}")
+        
+        time_start = hadt.parse_time(self._entry.data.get(CONFID_TIME_START))
+        time_end = hadt.parse_time(self._entry.data.get(CONFID_TIME_END))
+        time: dt.time = hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME)).time()
+        if (time_start is not None) and (time < time_start):
+            explanations.append(f"time {time}<{time_start}")
+        if (time_end is not None) and (time >= time_end):
+            explanations.append(f"time {time}>={time_end}")
+        
+        dow = None # self._entry.data.get(CONFID_DOW)
+        isday_valid = self._entry.data.get(CONFID_ISDAY_VALID, False)
+        isday = self._entry.data.get(CONFID_ISDAY, False)
+        isday_actual = forecast.get("is_daytime", None)
+        if isday_valid and (isday != isday_actual):
+            explanations.append(f"isday {isday}!={isday_actual}")
+        
+        return ", ".join(explanations)
 
 class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
     """Implementation of binary sensor for per-day."""
@@ -238,10 +267,33 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
             LOGGER.debug("Found too few forecasts")
             self._set_unavailable()
         else:
-            filtered_activity = self.filter_forecasts_by_activity(filtered_day)
+            filtered_activity = self.filter_forecasts_by_activity(filtered_day).sort(key=lambda forecast: hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME)))
             self._attr_on = len(filtered_activity) > 0
+            
+            hours_ranges: list[str] = []
+            hours_count: int = len(filtered_activity)
+            hours_start: dt.datetime|None = None
+            hours_prev: dt.datetime|None = None
+            for i in range(hours_count):
+                hours_current: dt.datetime = filtered_activity[i].get(ATTR_FORECAST_TIME)
+                if hours_start is None:
+                    hours_start = hours_current
+                    hours_prev = hours_current
+                elif hours_current == hours_prev + dt.timedelta(hours=1):
+                    hours_prev = hours_current
+                else:
+                    explanation = self.explain_mismatch(next((forecast for forecast in filtered_activity if lambda fc: hadt.parse_datetime(fc.get(ATTR_FORECAST_TIME)) == hours_prev + dt.timedelta(hours=1)), None))
+                    hours_ranges.append(hours_start.strftime("%H:%M") + " to + hours_prev.strftime("%H:%M") + " because " + explanation)
+                    hours_start = hours_current
+                    hours_prev = hours_current
+            if hours_start is not None:
+                explanation = self.explain_mismatch(next((forecast for forecast in filtered_activity if lambda fc: hadt.parse_datetime(fc.get(ATTR_FORECAST_TIME)) == hours_prev + dt.timedelta(hours=1)), None))
+                hours_ranges.append(hours_start.strftime("%H:%M") + " to + hours_prev.strftime("%H:%M") + " because " + explanation)
+            
             self._attr_extra_state_attributes = {
                 ATTR_HRS_COUNT: len(filtered_activity),
+                ATTR_HRS_RANGES: hours_ranges,
+                ATTR_HRS_LIST: [hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME)).strftime("%H:%M") for forecast in filtered_activity] if self._attr_on else [],
                 ATTR_TEMP_MIN: min(filtered_activity, key=lambda f: f.get(ATTR_FORECAST_TEMP)).get(ATTR_FORECAST_TEMP) if self._attr_on else None,
                 ATTR_TEMP_MAX: max(filtered_activity, key=lambda f: f.get(ATTR_FORECAST_TEMP)).get(ATTR_FORECAST_TEMP) if self._attr_on else None,
             }
