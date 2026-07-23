@@ -267,7 +267,8 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
             LOGGER.debug("Found too few forecasts")
             self._set_unavailable()
         else:
-            filtered_activity = self.filter_forecasts_by_activity(filtered_day).sort(key=lambda forecast: hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME)))
+            filtered_activity = self.filter_forecasts_by_activity(filtered_day)
+            filtered_activity.sort(key=lambda forecast: hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME)))
             self._attr_on = len(filtered_activity) > 0
             
             hours_ranges: list[str] = []
