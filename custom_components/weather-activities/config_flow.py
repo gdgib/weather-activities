@@ -86,9 +86,9 @@ class WeatherActivitiesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         errors = {}
         if user_input is not None:
-            if data_updates[CONFID_TIME_START] is not None and not time_regex.search(data_updates[CONFID_TIME_START]):
+            if user_input[CONFID_TIME_START] is not None and not time_regex.search(user_input[CONFID_TIME_START]):
                 errors[CONFID_TIME_START] = time_msg
-            if data_updates[CONFID_TIME_END] is not None and not time_regex.search(data_updates[CONFID_TIME_END]):
+            if user_input[CONFID_TIME_END] is not None and not time_regex.search(user_input[CONFID_TIME_END]):
                 errors[CONFID_TIME_END] = time_msg
             
             if not errors:
