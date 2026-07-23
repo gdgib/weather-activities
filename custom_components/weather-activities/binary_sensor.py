@@ -276,7 +276,7 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
             hours_start: dt.datetime|None = None
             hours_prev: dt.datetime|None = None
             for i in range(hours_count):
-                hours_current: dt.datetime = filtered_activity[i].get(ATTR_FORECAST_TIME)
+                hours_current: dt.datetime = hadt.parse_datetime(filtered_activity[i].get(ATTR_FORECAST_TIME))
                 if hours_start is None:
                     hours_start = hours_current
                     hours_prev = hours_current
