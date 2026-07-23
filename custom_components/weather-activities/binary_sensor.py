@@ -53,7 +53,8 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         self._entry = entry
         self._day = day
         
-        self._name = self._entry.data.get(CONFID_NAME) + " Day " + str(self._day)
+        self._activity_name = self._entry.data.get(CONFID_NAME)
+        self._name = self._activity_name + " Day " + str(self._day)
         self._key = re.sub(r'[-\s]+', '_', self._name).lower()
         
         self.entity_description = BinarySensorEntityDescription(
@@ -72,14 +73,14 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
     def device_info(self) -> DeviceInfo:
         """Get the device information."""
         return DeviceInfo(
-            name=f"WeatherActivityPerDay {self._name}",
+            name=f"WeatherActivity {self._activity_name}",
             manufacturer="HAExt",
-            model="PerDay",
+            model="WeatherActivity",
             sw_version="1.0",
             identifiers={
                 (
                     DOMAIN,
-                    f"{self._key}",
+                    f"{self._activity_name}",
                 )
             },
         )
