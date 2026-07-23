@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import re
 from typing import Any
 import voluptuous as vol
 
@@ -10,6 +9,7 @@ from homeassistant.components.weather import (
     DOMAIN as DOMAIN_WEATHER,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import selector
 
 from .const import (
@@ -45,11 +45,8 @@ async def create_schema(hass: HomeAssistant) -> vol.Schema:
     LOGGER.debug("Weather entities: %s", weather_entities)
     weather_entity = weather_entities[0] if weather_entities else None
     
-    dow_regex = re.compile(r"^[MTWRFSU]+$")
-    dow_msg = "Invalid day of week (use [MTWRFSU]+)"
-    
-    time_regex = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d$")
-    time_msg = "Invalid time format (use HH:MM)"
+    dow_regex = "^[MTWRFSU]+$"
+    time_regex = "^(?:[01]\d|2[0-3]):[0-5]\d$"
     
     return vol.Schema(
         {
@@ -67,10 +64,10 @@ async def create_schema(hass: HomeAssistant) -> vol.Schema:
             ),
             vol.Optional(CONFID_TEMP_MIN, default=CONFDF_TEMP_MIN): vol.Maybe(vol.Coerce(float)),
             vol.Optional(CONFID_TEMP_MAX, default=CONFDF_TEMP_MAX): vol.Maybe(vol.Coerce(float)),
-            vol.Optional(CONFID_TIME_START, default=CONFDF_TIME_START): vol.Maybe(vol.Match(time_regex, msg=time_msg)),
-            vol.Optional(CONFID_TIME_END, default=CONFDF_TIME_END): vol.Maybe(vol.Match(time_regex, msg=time_msg)),
+            vol.Optional(CONFID_TIME_START, default=CONFDF_TIME_START): cv.matches_regex(time_regex),
+            vol.Optional(CONFID_TIME_END, default=CONFDF_TIME_END): cv.matches_regex(time_regex),,
             vol.Optional(CONFID_ISDAY, default=CONFDF_ISDAY): vol.Maybe(vol.Coerce(bool)),
-            # vol.Optional(CONFID_DOW, default=CONFDF_DOW): vol.Maybe(vol.Match(dow_regex, msg=dow_msg)),
+            # vol.Optional(CONFID_DOW, default=CONFDF_DOW): cv.matches_regex(dow_regex),,
             vol.Optional(CONFID_HRS_MIN, default=CONFDF_HRS_MIN): vol.Maybe(vol.Coerce(int)),
         },
     )
