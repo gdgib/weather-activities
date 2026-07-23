@@ -73,7 +73,6 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         
         self.entity_description = BinarySensorEntityDescription(
             key=self._key,
-            name=self._name,
             icon=ICON_OFF,
             translation_key=DOMAIN + " perday",
         )
@@ -87,6 +86,11 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
     def device_info(self) -> DeviceInfo:
         """Get the device information."""
         return self._device_info
+
+    @property
+    def name(self) -> str:
+        """Get the entity name."""
+        return hadt.now().strftime("%A") + " (+" + str(self._day) + "d)"
 
     def _load_from_coordinator(self) -> None:
         if not self.coordinator.data.valid:
