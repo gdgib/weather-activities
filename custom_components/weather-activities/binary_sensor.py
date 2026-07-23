@@ -55,12 +55,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
           },
       )
     
-    async_add_entities([WeatherActivitiesSensor(hass=hass, entry=entry, coordinator=coordinator, device_info=device_info, day=day) for day in range(0,forecast_days+1)])
+    async_add_entities([WeatherActivitiesActivitySensor(hass=hass, entry=entry, coordinator=coordinator, device_info=device_info)] + [WeatherActivitiesDaySensor(hass=hass, entry=entry, coordinator=coordinator, device_info=device_info, day=day) for day in range(0,forecast_days+1)])
 
 class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
     """Implementation of binary sensor."""
-
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, coordinator: WeatherActivitiesDataCoordinator, device_info: DeviceInfo, day: int) -> None:
+    
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, coordinator: WeatherActivitiesDataCoordinator, device_info: DeviceInfo) -> None:
         """Initialize the binary sensor."""
         super().__init__(coordinator)
         
@@ -68,69 +68,125 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         
         self._entry = entry
         self._device_info = device_info
-        self._day = day
         
         self._activity_name = self._entry.data.get(CONFID_NAME)
-        self._name = self._activity_name + " Day " + str(self._day)
+        self._name = self._generate_name()
         self._key = re.sub(r'[-\s]+', '_', self._name).lower()
         
         self.entity_id = generate_entity_id("binary_sensor.{}", DOMAIN + "_" + self._key, hass=hass)
         self.entity_description = BinarySensorEntityDescription(
             key=self._key,
-            icon=ICON_OFF,
-            translation_key=DOMAIN + " perday",
+            icon=ICON_OFF
         )
-
+        
         self._load_from_coordinator()
         self._attr_unique_id = f"{self._entry.entry_id}_{self._key}"
-
+        
         LOGGER.debug("Initialized binary sensor %s entry data: %s", self._name, self._entry.data)
-
+    
+    def _generate_name(self) -> str:
+        """Generate a name for this entity"""
+        return self._activity_name
+    
     @property
     def device_info(self) -> DeviceInfo:
         """Get the device information."""
         return self._device_info
-
+    
     @property
     def unique_id(self) -> str:
         """Get the unique id."""
         return f"{DOMAIN}-{self._key}"
-
+    
     @property
     def name(self) -> str:
         """Get the entity name."""
-        return (hadt.now() + dt.timedelta(hours=24 * self._day)).strftime("%A") + " (+" + str(self._day) + "d)"
-
+        return self._name
+    
     def _load_from_coordinator(self) -> None:
         if not self.coordinator.data.valid:
             LOGGER.debug("No valid coordinator data")
             self._attr_on = None
         else:
             forecasts = self.coordinator.data.forecasts
-            filtered_time = self.filter_forecasts(forecasts)
-            LOGGER.debug("Found forecasts in time range: %s", filtered_time)
-            if (len(filtered_time) < 24) and (self._day > 0):
-                LOGGER.debug("Found too few forecasts")
-                self._attr_on = None
-            else:
-                temp_min = self._entry.data.get(CONFID_TEMP_MIN)
-                temp_max = self._entry.data.get(CONFID_TEMP_MAX)
-                LOGGER.debug("Filtering for temperatures between %s and %s", temp_min, temp_max)
-                filtered_temp = [
-                    forecast
-                    for forecast in filtered_time
-                    if (((temp_max is None) or (forecast.get(ATTR_FORECAST_TEMP) < temp_max)) and ((temp_min is None) or (forecast.get(ATTR_FORECAST_TEMP) >= temp_min)))
-                ]
-                LOGGER.debug("Found forecasts in temp range: %s", filtered_temp)
-                self._attr_on = len(filtered_temp) > 0
+            self._load_from_forecasts(forecasts)
+    
+    def _load_from_forecasts(self, forecasts: list) -> None:
+        LOGGER.debug("Not properly implemented")
+        self._attr_on = None
     
     @callback
     def _handle_coordinator_update(self) -> None:
         """Update binary sensor with latest data from coordinator."""
         self._load_from_coordinator()
         self.async_write_ha_state()
+    
+    @property
+    def is_on(self) -> bool:
+        """Test if the entity is on."""
+        return self._attr_on
+    
+    @property
+    def available(self) -> bool:
+        """Test if entity is available."""
+        return self._attr_on is not None
+    
+    @property
+    def icon(self) -> str:
+        """Get the icon, based on the current state."""
+        return ICON_ON if self.is_on else ICON_OFF
+    
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Get state attributes."""
+        return {}
+    
+    def filter_forecasts_by_activity(self, forecasts: list) -> list:
+        """Filter forecasts down to those valid for this activity."""
+        temp_min = self._entry.data.get(CONFID_TEMP_MIN)
+        temp_max = self._entry.data.get(CONFID_TEMP_MAX)
+        LOGGER.debug("Filtering for temperatures between %s and %s", temp_min, temp_max)
+        filtered_temp = [
+            forecast
+            for forecast in forecasts
+            if (((temp_max is None) or (forecast.get(ATTR_FORECAST_TEMP) < temp_max)) and ((temp_min is None) or (forecast.get(ATTR_FORECAST_TEMP) >= temp_min)))
+        ]
+        LOGGER.debug("Found forecasts in temp range: %s", filtered_temp)
+        return filtered_temp
 
-    def filter_forecasts(self, forecasts: list) -> list:
+class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
+    """Implementation of binary sensor for per-day."""
+
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, coordinator: WeatherActivitiesDataCoordinator, device_info: DeviceInfo, day: int) -> None:
+        """Initialize the binary sensor."""
+        self._day = day
+        super().__init__(hass=hass, entry=entry, coordinator=coordinator, device_info=device_info)
+
+    def _generate_name(self) -> str:
+        """Generate a name for this entity"""
+        return self._activity_name + " Day " + str(self._day)
+
+    @property
+    def translation_key(self) -> str:
+        """Get the translation key."""
+        return DOMAIN + " perday",
+
+    @property
+    def name(self) -> str:
+        """Get the entity name."""
+        return (hadt.now() + dt.timedelta(hours=24 * self._day)).strftime("%Y-%m-%d %A") + " (+" + str(self._day) + "d)"
+
+    def _load_from_forecasts(self, forecasts: list) -> None:
+        filtered_time = self.filter_forecasts_by_time(forecasts)
+        LOGGER.debug("Found forecasts in time range: %s", filtered_time)
+        if (len(filtered_time) < 24) and (self._day > 0):
+            LOGGER.debug("Found too few forecasts")
+            self._attr_on = None
+        else:
+            filtered_activity = self.filter_forecasts_by_activity(filtered_time)
+            self._attr_on = len(filtered_activity) > 0
+    
+    def filter_forecasts_by_time(self, forecasts: list) -> list:
         """Filter forecasts down to those valid for this sensor."""
         now = hadt.now()
         time_start = hadt.start_of_local_day(now + dt.timedelta(hours=24 * self._day))
@@ -140,23 +196,24 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
             for forecast in forecasts
             if (((time_forecast := hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME))) < time_end) and (time_forecast >= time_start))
         ]
-    
-    @property
-    def is_on(self) -> bool:
-        """Test if the entity is on."""
-        return self._attr_on
+
+class WeatherActivitiesActivitySensor(WeatherActivitiesSensor):
+    """Implementation of binary sensor for the activity."""
+
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, coordinator: WeatherActivitiesDataCoordinator, device_info: DeviceInfo) -> None:
+        """Initialize the binary sensor."""
+        super().__init__(hass=hass, entry=entry, coordinator=coordinator, device_info=device_info)
+
+    def _generate_name(self) -> str:
+        """Generate a name for this entity"""
+        return self._activity_name
 
     @property
-    def available(self) -> bool:
-        """Test if entity is available."""
-        return self._attr_on is not None
+    def translation_key(self) -> str:
+        """Get the translation key."""
+        return DOMAIN + " activity",
 
-    @property
-    def icon(self) -> str:
-        """Get the icon, based on the current state."""
-        return ICON_ON if self.is_on else ICON_OFF
-
-    @property
-    def extra_state_attributes(self) -> dict:
-        """Get state attributes."""
-        return {}
+    def _load_from_forecasts(self, forecasts: list) -> None:
+        LOGGER.debug("Found forecasts: %s", forecasts)
+        filtered_activity = self.filter_forecasts_by_activity(forecasts)
+        self._attr_on = len(filtered_activity) > 0
