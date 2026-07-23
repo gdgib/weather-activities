@@ -37,7 +37,7 @@ class WeatherActivitiesDataCoordinator(DataUpdateCoordinator):
             hass,
             LOGGER,
             name=f"{DOMAIN} ({self._entry.unique_id})",
-            update_method=self._async_update_method,
+            update_method=self.get_coordinator_data,
         )
         
         self.unsubscribe = async_track_state_change_event(
@@ -52,10 +52,6 @@ class WeatherActivitiesDataCoordinator(DataUpdateCoordinator):
 
     async def _async_entity_state_changed(self, event):
         """Update the coordinator data, because the entity state changed."""
-        self.async_set_updated_data(await self.get_coordinator_data())
-
-    async def _async_update_method(self):
-        """Update the coordinator data at startup."""
         self.async_set_updated_data(await self.get_coordinator_data())
 
     async def get_coordinator_data(self) -> CoordinatorData:
