@@ -40,7 +40,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     LOGGER.debug("Creating per-day sensors for %d days", forecast_days)
     
     coordinator: WeatherActivitiesDataCoordinator = hass.data[DOMAIN][entry.entry_id].coordinator
-    activity_name: str = self._entry.data.get(CONFID_NAME)
+    activity_name: str = entry.data.get(CONFID_NAME)
     device_info: DeviceInfo = DeviceInfo(
           name=f"WeatherActivity {activity_name}",
           manufacturer="HAExt",
