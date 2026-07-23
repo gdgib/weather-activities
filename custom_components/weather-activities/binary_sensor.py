@@ -128,6 +128,7 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
     
     def _set_unavailable(self) -> None:
         self._attr_on = None
+        self._attr_extra_state_attributes = {}
     
     def _load_from_forecasts(self, forecasts: list) -> None:
         LOGGER.debug("Not properly implemented")
@@ -153,11 +154,6 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
     def icon(self) -> str:
         """Get the icon, based on the current state."""
         return ICON_ON if self.is_on else ICON_OFF
-    
-    @property
-    def extra_state_attributes(self) -> dict:
-        """Get state attributes."""
-        return {}
     
     def filter_forecasts_by_activity(self, forecasts: list) -> list:
         """Filter forecasts down to those valid for this activity."""
@@ -204,9 +200,6 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
         """Initialize the binary sensor."""
         self._day = day
         super().__init__(hass=hass, entry=entry, coordinator=coordinator, device_info=device_info)
-        self._attr_hrs_count = None
-        self._attr_temp_min = None
-        self._attr_temp_max = None
 
     def _generate_name(self) -> str:
         """Generate a name for this entity"""
@@ -222,12 +215,6 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
         """Get the entity name."""
         return (hadt.now() + dt.timedelta(hours=24 * self._day)).strftime("%Y-%m-%d %A") + " (+" + str(self._day) + "d)"
     
-    def _set_unavailable(self) -> None:
-        self._attr_on = None
-        self._attr_hrs_count = None
-        self._attr_temp_min = None
-        self._attr_temp_max = None
-    
     def _load_from_forecasts(self, forecasts: list) -> None:
         filtered_time = self.filter_forecasts_by_time(forecasts)
         LOGGER.debug("Found forecasts in time range: %s", filtered_time)
@@ -237,9 +224,11 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
         else:
             filtered_activity = self.filter_forecasts_by_activity(filtered_time)
             self._attr_on = len(filtered_activity) > 0
-            self._attr_hrs_count = len(filtered_activity)
-            self._attr_temp_min = min(filtered_activity, key=lambda f: f.get(ATTR_FORECAST_TEMP)).get(ATTR_FORECAST_TEMP) if self._attr_on else None
-            self._attr_temp_max = max(filtered_activity, key=lambda f: f.get(ATTR_FORECAST_TEMP)).get(ATTR_FORECAST_TEMP) if self._attr_on else None
+            self._attr_extra_state_attributes = {
+                ATTR_HRS_COUNT: len(filtered_activity),
+                ATTR_TEMP_MIN: min(filtered_activity, key=lambda f: f.get(ATTR_FORECAST_TEMP)).get(ATTR_FORECAST_TEMP) if self._attr_on else None,
+                ATTR_TEMP_MAX: max(filtered_activity, key=lambda f: f.get(ATTR_FORECAST_TEMP)).get(ATTR_FORECAST_TEMP) if self._attr_on else None,
+            }
     
     def filter_forecasts_by_time(self, forecasts: list) -> list:
         """Filter forecasts down to those valid for this sensor."""
@@ -251,15 +240,6 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
             for forecast in forecasts
             if (((time_forecast := hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME))) < time_end) and (time_forecast >= time_start))
         ]
-    
-    @property
-    def extra_state_attributes(self) -> dict:
-        """Get state attributes."""
-        return {
-            ATTR_HRS_COUNT: self._attr_hrs_count,
-            ATTR_TEMP_MIN: self._attr_temp_min,
-            ATTR_TEMP_MAX: self._attr_temp_max,
-        }
 
 class WeatherActivitiesActivitySensor(WeatherActivitiesSensor):
     """Implementation of binary sensor for the activity."""
@@ -278,19 +258,10 @@ class WeatherActivitiesActivitySensor(WeatherActivitiesSensor):
         """Get the translation key."""
         return DOMAIN + " activity",
     
-    def _set_unavailable(self) -> None:
-        self._attr_on = None
-        self._attr_days_count = None
-    
     def _load_from_forecasts(self, forecasts: list) -> None:
         LOGGER.debug("Found forecasts: %s", forecasts)
         filtered_activity = self.filter_forecasts_by_activity(forecasts)
         self._attr_on = len(filtered_activity) > 0
-        self._attr_days_count = len(filtered_activity)
-    
-    @property
-    def extra_state_attributes(self) -> dict:
-        """Get state attributes."""
-        return {
-            ATTR_DAYS_COUNT: self._attr_days_count,
+        self._attr_extra_state_attributes = {
+            ATTR_DAYS_COUNT: len(filtered_activity),
         }
