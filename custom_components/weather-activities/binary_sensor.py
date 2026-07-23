@@ -28,6 +28,7 @@ from .const import (
     CONFID_TEMP_MAX,
     CONFID_TIME_START,
     CONFID_TIME_END,
+    CONFID_ISDAY_VALID
     CONFID_ISDAY,
     CONFID_DOW,
     CONFID_HRS_MIN,
@@ -169,7 +170,7 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         LOGGER.debug("Found forecasts in time range: %s", filtered_time)
         
         dow = None # self._entry.data.get(CONFID_DOW)
-        isday = self._entry.data.get(CONFID_ISDAY)
+        isday = self._entry.data.get(CONFID_ISDAY) if self._entry.data.get(CONFID_ISDAY_VALID) else False
         LOGGER.debug("Filtering for dow %s and isday %s", dow, isday)
         filtered_dd = [
             forecast

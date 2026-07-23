@@ -12,7 +12,8 @@
           "temp_max": "Maximum allowed temperature",
           "time_start": "Start of allowed time range (HH:MM)",
           "time_end": "End of allowed time range (HH:MM)",
-          "isday": "Does the activity require daytime?",
+          "isday_valid": "Does the activity care about day/night?",
+          "isday": "Does the activity require day (or night)?",
           "dow": "What days of the week is the activity allowed on?",
           "hrs_min": "Minimum hours per day"
         }
@@ -27,7 +28,8 @@
           "temp_max": "Maximum allowed temperature",
           "time_start": "Start of allowed time range (HH:MM)",
           "time_end": "End of allowed time range (HH:MM)",
-          "isday": "Does the activity require daytime?",
+          "isday_valid": "Does the activity care about day/night?",
+          "isday": "Does the activity require day (or night)?", 
           "dow": "What days of the week is the activity allowed on?",
           "hrs_min": "Minimum hours per day"
         }
