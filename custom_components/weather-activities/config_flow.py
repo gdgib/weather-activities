@@ -46,10 +46,10 @@ async def create_schema(hass: HomeAssistant) -> vol.Schema:
     LOGGER.debug("Weather entities: %s", weather_entities)
     weather_entity = weather_entities[0] if weather_entities else None
     
-    dow_regex = re.compile(r"^[MTWRFSU]+$")
+    dow_regex = r"^[MTWRFSU]+$"
     dow_msg = "Invalid day of week (use [MTWRFSU]+)"
     
-    time_regex = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d$")
+    time_regex = r"^(?:[01]\d|2[0-3]):[0-5]\d$"
     time_msg = "Invalid time format (use HH:MM)"
     
     return vol.Schema(
