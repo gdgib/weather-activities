@@ -7,6 +7,7 @@ from homeassistant.components.binary_sensor import (
 DOMAIN = "weather-activities"
 PLATFORMS = [DOMAIN_BINARY_SENSOR]
 
+# Configuration IDs
 CONFID_NAME = "name"
 CONFID_WEATHER_ENTITY = "weather_entity"
 CONFID_FORECAST_DAYS = "forecast_days"
@@ -19,6 +20,7 @@ CONFID_ISDAY = "isday"
 CONFID_DOW = "dow"
 CONFID_HRS_MIN = "hrs_min"
 
+# Configuration Defaults
 CONFDF_NAME = DOMAIN
 CONFDF_FORECAST_DAYS = 7
 CONFDF_TEMP_MIN = None
@@ -30,5 +32,10 @@ CONFDF_ISDAY = None
 CONFDF_DOW = None
 CONFDF_HRS_MIN = None
 
+# Icons
 ICON_ON = "mdi:cloud-check-variant"
 ICON_OFF = "mdi:cloud-alert"
+
+# Attributes
+ATTR_HRS_COUNT = "hrs_count"
+ATTR_DAYS_COUNT = "days_count"

@@ -34,6 +34,8 @@ from .const import (
     CONFID_HRS_MIN,
     ICON_ON,
     ICON_OFF,
+    ATTR_HRS_COUNT,
+    ATTR_DAYS_COUNT,
 )
 from .coordinator import WeatherActivitiesDataCoordinator
 
@@ -192,6 +194,7 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
         """Initialize the binary sensor."""
         self._day = day
         super().__init__(hass=hass, entry=entry, coordinator=coordinator, device_info=device_info)
+        self._attr_hrs_count = None
 
     def _generate_name(self) -> str:
         """Generate a name for this entity"""
@@ -213,9 +216,11 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
         if (len(filtered_time) < 24) and (self._day > 0):
             LOGGER.debug("Found too few forecasts")
             self._attr_on = None
+            self._attr_hrs_count = None
         else:
             filtered_activity = self.filter_forecasts_by_activity(filtered_time)
             self._attr_on = len(filtered_activity) > 0
+            self._attr_hrs_count = len(filtered_activity)
     
     def filter_forecasts_by_time(self, forecasts: list) -> list:
         """Filter forecasts down to those valid for this sensor."""
@@ -227,6 +232,13 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
             for forecast in forecasts
             if (((time_forecast := hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME))) < time_end) and (time_forecast >= time_start))
         ]
+    
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Get state attributes."""
+        return {
+            ATTR_HRS_COUNT: self._attr_hrs_count
+        }
 
 class WeatherActivitiesActivitySensor(WeatherActivitiesSensor):
     """Implementation of binary sensor for the activity."""
@@ -234,6 +246,7 @@ class WeatherActivitiesActivitySensor(WeatherActivitiesSensor):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, coordinator: WeatherActivitiesDataCoordinator, device_info: DeviceInfo) -> None:
         """Initialize the binary sensor."""
         super().__init__(hass=hass, entry=entry, coordinator=coordinator, device_info=device_info)
+        self._attr_days_count = None
 
     def _generate_name(self) -> str:
         """Generate a name for this entity"""
@@ -248,3 +261,11 @@ class WeatherActivitiesActivitySensor(WeatherActivitiesSensor):
         LOGGER.debug("Found forecasts: %s", forecasts)
         filtered_activity = self.filter_forecasts_by_activity(forecasts)
         self._attr_on = len(filtered_activity) > 0
+        self._attr_days_count = len(filtered_activity)
+    
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Get state attributes."""
+        return {
+            ATTR_DAYS_COUNT: self._attr_days_count
+        }
