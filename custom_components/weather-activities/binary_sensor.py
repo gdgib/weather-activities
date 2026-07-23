@@ -238,8 +238,8 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
             filtered_activity = self.filter_forecasts_by_activity(filtered_time)
             self._attr_on = len(filtered_activity) > 0
             self._attr_hrs_count = len(filtered_activity)
-            self._attr_temp_min = min(filtered_activity, key=lambda f: f.get(ATTR_FORECAST_TEMP)).get(ATTR_FORECAST_TEMP)
-            self._attr_temp_max = max(filtered_activity, key=lambda f: f.get(ATTR_FORECAST_TEMP)).get(ATTR_FORECAST_TEMP)
+            self._attr_temp_min = min(filtered_activity, key=lambda f: f.get(ATTR_FORECAST_TEMP)).get(ATTR_FORECAST_TEMP) if self._attr_on else None
+            self._attr_temp_max = max(filtered_activity, key=lambda f: f.get(ATTR_FORECAST_TEMP)).get(ATTR_FORECAST_TEMP) if self._attr_on else None
     
     def filter_forecasts_by_time(self, forecasts: list) -> list:
         """Filter forecasts down to those valid for this sensor."""
