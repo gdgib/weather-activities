@@ -37,7 +37,7 @@ class WeatherActivitiesDataCoordinator(DataUpdateCoordinator):
             hass,
             LOGGER,
             name=f"{DOMAIN} ({self._entry.unique_id})",
-            update_method=self.async_update_data,
+            update_method=self._async_update_method,
         )
         
         self.unsubscribe = async_track_state_change_event(
@@ -48,13 +48,19 @@ class WeatherActivitiesDataCoordinator(DataUpdateCoordinator):
 
     async def async_update_data(self):
         """Fetch the data."""
-        forecasts = await self.get_forecasts(self._entry.data.get(CONFID_WEATHER_ENTITY))
-        return CoordinatorData(True, forecasts)
+        return await self.get_coordinator_data()
 
     async def _async_entity_state_changed(self, event):
         """Update the coordinator data, because the entity state changed."""
+        self.async_set_updated_data(await self.get_coordinator_data())
+
+    async def _async_update_method(self):
+        """Update the coordinator data at startup."""
+        self.async_set_updated_data(await self.get_coordinator_data())
+
+    async def get_coordinator_data(self) -> CoordinatorData:
         forecasts = await self.get_forecasts(self._entry.data.get(CONFID_WEATHER_ENTITY))
-        self.async_set_updated_data(CoordinatorData(True, forecasts))
+        return CoordinatorData(True, forecasts)
 
     async def get_forecasts(self, entity_id: str) -> list:
         """Get the forecasts from the weather entity."""
