@@ -174,7 +174,7 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
     @property
     def name(self) -> str:
         """Get the entity name."""
-        return (hadt.now() + dt.timedelta(hours=24 * self._day)).strftime("%A") + " (+" + str(self._day) + "d)"
+        return (hadt.now() + dt.timedelta(hours=24 * self._day)).strftime("%Y-%m-%d %A") + " (+" + str(self._day) + "d)"
 
     def _load_from_forecasts(self, forecasts: list) -> None:
         filtered_time = self.filter_forecasts_by_time(forecasts)
