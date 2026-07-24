@@ -11,6 +11,7 @@ PLATFORMS = [DOMAIN_BINARY_SENSOR]
 CONFID_NAME = "name"
 CONFID_WEATHER_ENTITY = "weather_entity"
 CONFID_FORECAST_DAYS = "forecast_days"
+CONFID_TEMP_OFFSET = "temp_offset"
 CONFID_TEMP_MIN = "temp_min"
 CONFID_TEMP_MAX = "temp_max"
 CONFID_TIME_START = "time_start"
@@ -23,6 +24,7 @@ CONFID_HRS_MIN = "hrs_min"
 # Configuration Defaults
 CONFDF_NAME = DOMAIN
 CONFDF_FORECAST_DAYS = 7
+CONFDF_TEMP_OFFSET = None
 CONFDF_TEMP_MIN = None
 CONFDF_TEMP_MAX = None
 CONFDF_TIME_START = None

@@ -24,6 +24,7 @@ from .const import (
     DOMAIN,
     CONFID_NAME,
     CONFID_FORECAST_DAYS,
+    CONFID_TEMP_OFFSET,
     CONFID_TEMP_MIN,
     CONFID_TEMP_MAX,
     CONFID_TIME_START,
@@ -91,6 +92,7 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
             icon=ICON_OFF
         )
         
+        self._temp_offset = float(self._entry.data.get(CONFID_TEMP_OFFSET)) if self._entry.data.get(CONFID_TEMP_OFFSET) is not None else 0.0
         self._load_from_coordinator()
         self._attr_unique_id = f"{self._entry.entry_id}_{self._key}"
         
@@ -181,7 +183,7 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         filtered_temp = [
             forecast
             for forecast in forecasts
-            if (((temp_max is None) or (forecast.get(ATTR_FORECAST_TEMP) < temp_max)) and ((temp_min is None) or (forecast.get(ATTR_FORECAST_TEMP) >= temp_min)))
+            if (((temp_max is None) or ((float(forecast.get(ATTR_FORECAST_TEMP)) + self._temp_offset) < temp_max)) and ((temp_min is None) or ((float(forecast.get(ATTR_FORECAST_TEMP)) + self._temp_offset) >= temp_min)))
         ]
         LOGGER.debug("Found forecasts in temp range:\n\t%s", "\n\t".join(map(str, filtered_temp)))
         
@@ -218,7 +220,7 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         explanations = []
         temp_min = self._entry.data.get(CONFID_TEMP_MIN)
         temp_max = self._entry.data.get(CONFID_TEMP_MAX)
-        temp_actual = forecast.get(ATTR_FORECAST_TEMP)
+        temp_actual = float(forecast.get(ATTR_FORECAST_TEMP)) + self._temp_offset
         if (temp_min is not None) and (temp_actual < temp_min):
             explanations.append(f"temp {temp_actual}<{temp_min}")
         if (temp_max is not None) and (temp_actual >= temp_max):
@@ -300,8 +302,8 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
                 ATTR_HRS_COUNT: len(filtered_activity),
                 ATTR_HRS_RANGES: hours_ranges,
                 ATTR_HRS_LIST: [hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME)).strftime("%H:%M") for forecast in filtered_activity] if self._attr_on else [],
-                ATTR_TEMP_MIN: min(filtered_activity, key=lambda f: f.get(ATTR_FORECAST_TEMP)).get(ATTR_FORECAST_TEMP) if self._attr_on else None,
-                ATTR_TEMP_MAX: max(filtered_activity, key=lambda f: f.get(ATTR_FORECAST_TEMP)).get(ATTR_FORECAST_TEMP) if self._attr_on else None,
+                ATTR_TEMP_MIN: float(min(filtered_activity, key=lambda f: f.get(ATTR_FORECAST_TEMP)).get(ATTR_FORECAST_TEMP)) + self._temp_offset if self._attr_on else None,
+                ATTR_TEMP_MAX: float(max(filtered_activity, key=lambda f: f.get(ATTR_FORECAST_TEMP)).get(ATTR_FORECAST_TEMP)) + self._temp_offset if self._attr_on else None,
             }
     
     def match_forecast_time(self, forecast, time_start: dt.time | None, time_end: dt.time | None):

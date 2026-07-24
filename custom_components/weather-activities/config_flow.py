@@ -18,6 +18,7 @@ from .const import (
     CONFID_NAME,
     CONFID_WEATHER_ENTITY,
     CONFID_FORECAST_DAYS,
+    CONFID_TEMP_OFFSET,
     CONFID_TEMP_MIN,
     CONFID_TEMP_MAX,
     CONFID_TIME_START,
@@ -28,6 +29,7 @@ from .const import (
     CONFID_HRS_MIN,
     CONFDF_NAME,
     CONFDF_FORECAST_DAYS,
+    CONFDF_TEMP_OFFSET,
     CONFDF_TEMP_MIN,
     CONFDF_TEMP_MAX,
     CONFDF_TIME_START,
@@ -62,6 +64,7 @@ async def create_schema(hass: HomeAssistant) -> vol.Schema:
                 vol.Coerce(int), 
                 vol.Range(min=1, max=21)
             ),
+            vol.Optional(CONFID_TEMP_OFFSET, default=CONFDF_TEMP_OFFSET): vol.Maybe(vol.Coerce(float)),
             vol.Optional(CONFID_TEMP_MIN, default=CONFDF_TEMP_MIN): vol.Maybe(vol.Coerce(float)),
             vol.Optional(CONFID_TEMP_MAX, default=CONFDF_TEMP_MAX): vol.Maybe(vol.Coerce(float)),
             vol.Optional(CONFID_TIME_START, default=CONFDF_TIME_START): vol.Maybe(str),

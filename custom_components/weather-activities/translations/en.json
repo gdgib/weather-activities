@@ -8,6 +8,7 @@
         "data": {
           "weather_entity": "Weather entity",
           "forecast_days": "Days to look ahead",
+          "temp_offset": "Offset to add to the forecast temperatures before use",
           "temp_min": "Minimum allowed temperature",
           "temp_max": "Maximum allowed temperature",
           "time_start": "Start of allowed time range (HH:MM)",
@@ -24,6 +25,7 @@
         "data": {
           "weather_entity": "Weather entity",
           "forecast_days": "Days to look ahead",
+          "temp_offset": "Offset to add to the forecast temperatures before use",
           "temp_min": "Minimum allowed temperature",
           "temp_max": "Maximum allowed temperature",
           "time_start": "Start of allowed time range (HH:MM)",
@@ -40,6 +42,16 @@
     "binary_sensor": {
       "weather_activities perday": {
         "state_attributes": {
+          "hrs_count": "Number of hours forecast to support the activity",
+          "hrs_ranges": "The hour ranges supporting the activity",
+          "hrs_list": "The hours which support the activity",
+          "temp_min": "Minimum temperature for the activity on this day",
+          "temp_max": "Maximum temperature for the activity on this day"
+        }
+      },
+      "weather_activities perday": {
+        "state_attributes": {
+          "days_count": "Number of days forecast to support the activity"
         }
       }
     }
