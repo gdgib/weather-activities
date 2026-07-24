@@ -13,6 +13,7 @@ from homeassistant.components.weather import (
     ATTR_FORECAST_TIME,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import generate_entity_id
@@ -79,6 +80,7 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         
         self._attr_has_entity_name = True
         
+        self._temp_unit = hass.config.units.temperature_unit.value
         self._entry = entry
         self._device_info = device_info
         
@@ -222,24 +224,27 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         temp_max = self._entry.data.get(CONFID_TEMP_MAX)
         temp_actual = float(forecast.get(ATTR_FORECAST_TEMP)) + self._temp_offset
         if (temp_min is not None) and (temp_actual < temp_min):
-            explanations.append(f"temp {temp_actual}<{temp_min}")
+            explanations.append(f"{temp_actual}<{temp_min}{self._temp_unit}")
         if (temp_max is not None) and (temp_actual >= temp_max):
-            explanations.append(f"temp {temp_actual}>={temp_max}")
+            explanations.append(f"{temp_actual}>={temp_max}{self._temp_unit}")
         
         time_start = hadt.parse_time(self._entry.data.get(CONFID_TIME_START)) if check_time_start else None
         time_end = hadt.parse_time(self._entry.data.get(CONFID_TIME_END)) if check_time_end else None
         time: dt.time = hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME)).time()
         if (time_start is not None) and (time < time_start):
-            explanations.append("time " + time.strftime("%H:%M") + "<" + time_start.strftime("%H:%M"))
+            explanations.append(time.strftime("%H:%M") + "<" + time_start.strftime("%H:%M"))
         if (time_end is not None) and (time >= time_end):
-            explanations.append("time " + time.strftime("%H:%M") + ">=" + time_end.strftime("%H:%M"))
+            explanations.append(time.strftime("%H:%M") + ">=" + time_end.strftime("%H:%M"))
         
         dow = None # self._entry.data.get(CONFID_DOW)
         isday_valid = self._entry.data.get(CONFID_ISDAY_VALID, False)
         isday = self._entry.data.get(CONFID_ISDAY, False)
         isday_actual = forecast.get("is_daytime", None)
         if isday_valid and (isday != isday_actual):
-            explanations.append(f"isday {isday}!={isday_actual}")
+            if isday_actual:
+                explanations.append("is day")
+            else:
+                explanations.append("is night")
         
         if len(explanations) < 1:
             return ""
@@ -291,12 +296,12 @@ class WeatherActivitiesDaySensor(WeatherActivitiesSensor):
                     hours_prev = hours_current
                 else:
                     explanation = self.explain_mismatch(next((forecast for forecast in forecasts if hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME)) == hours_prev + dt.timedelta(hours=1)), None))
-                    hours_ranges.append(hours_start.strftime("%H:%M") + " to " + (hours_prev + dt.timedelta(minutes=59)).strftime("%H:%M") + explanation)
+                    hours_ranges.append(hours_start.strftime("%H:%M") + "-" + (hours_prev + dt.timedelta(minutes=59)).strftime("%H:%M") + explanation)
                     hours_start = hours_current
                     hours_prev = hours_current
             if hours_start is not None:
                 explanation = self.explain_mismatch(next((forecast for forecast in forecasts if hadt.parse_datetime(forecast.get(ATTR_FORECAST_TIME)) == hours_prev + dt.timedelta(hours=1)), None))
-                hours_ranges.append(hours_start.strftime("%H:%M") + " to " + (hours_prev + dt.timedelta(minutes=59)).strftime("%H:%M") + explanation)
+                hours_ranges.append(hours_start.strftime("%H:%M") + "-" + (hours_prev + dt.timedelta(minutes=59)).strftime("%H:%M") + explanation)
             
             self._attr_extra_state_attributes = {
                 ATTR_HRS_COUNT: len(filtered_activity),
