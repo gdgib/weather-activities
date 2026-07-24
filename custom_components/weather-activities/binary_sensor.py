@@ -179,12 +179,11 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         """Filter forecasts down to those valid for this activity."""
         temp_min = self._entry.data.get(CONFID_TEMP_MIN)
         temp_max = self._entry.data.get(CONFID_TEMP_MAX)
-        temp_actual = float(forecast.get(ATTR_FORECAST_TEMP)) + self._temp_offset
         LOGGER.debug("Filtering for temperatures between %s and %s", temp_min, temp_max)
         filtered_temp = [
             forecast
             for forecast in forecasts
-            if (((temp_max is None) or (temp_actual < temp_max)) and ((temp_min is None) or (temp_actual >= temp_min)))
+            if (((temp_max is None) or ((float(forecast.get(ATTR_FORECAST_TEMP)) + self._temp_offset) < temp_max)) and ((temp_min is None) or ((float(forecast.get(ATTR_FORECAST_TEMP)) + self._temp_offset) >= temp_min)))
         ]
         LOGGER.debug("Found forecasts in temp range:\n\t%s", "\n\t".join(map(str, filtered_temp)))
         
