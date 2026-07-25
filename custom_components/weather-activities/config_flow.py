@@ -71,7 +71,7 @@ async def create_schema(hass: HomeAssistant) -> vol.Schema:
             vol.Optional(CONFID_TEMP_MAX, default=CONFDF_TEMP_MAX): vol.Maybe(vol.Coerce(float)),
             vol.Optional(CONFID_TIME_START, default=CONFDF_TIME_START): vol.Maybe(str),
             vol.Optional(CONFID_TIME_END, default=CONFDF_TIME_END): vol.Maybe(str),
-            vol.Optional(CONFID_TIME_FIRST, default=CONFDF_TIME_FIRST): bool
+            vol.Optional(CONFID_TIME_FIRST, default=CONFDF_TIME_FIRST): bool,
             vol.Required(CONFID_ISDAY_VALID, default=CONFDF_ISDAY_VALID): bool,
             vol.Required(CONFID_ISDAY, default=CONFDF_ISDAY): bool,
             # vol.Optional(CONFID_DOW, default=CONFDF_DOW): vol.Maybe(str),
