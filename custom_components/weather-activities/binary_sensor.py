@@ -215,7 +215,7 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         filtered_first: list = []
         if time_first:
             hours_prev: dt.datetime|None = None
-            for i in range(len(filtered_activity)):
+            for i in range(len(filtered_dd)):
                 hours_current_str: str = filtered_dd[i].get(ATTR_FORECAST_TIME)
                 hours_current_datetime: datetime = hadt.parse_datetime(hours_current_str)
                 if (hours_current_datetime == hours_prev + dt.timedelta(hours=1)) if hours_prev is not None else True:
