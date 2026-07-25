@@ -30,6 +30,7 @@ from .const import (
     CONFID_TEMP_MAX,
     CONFID_TIME_START,
     CONFID_TIME_END,
+    CONFID_TIME_FIRST,
     CONFID_ISDAY_VALID,
     CONFID_ISDAY,
     CONFID_DOW,
@@ -199,7 +200,7 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         ]
         LOGGER.debug("Found forecasts in time range:\n\t%s", "\n\t".join(map(str, filtered_time)))
         
-        dow = None # self._entry.data.get(CONFID_DOW)
+        dow = None # self._entry.data.get(CONFID_DOW)  NOTE - USE THE DAY FROM THE SENSOR, NOT FROM THE FORECAST TO HANDLE WRAPAROUND (document this for users)
         isday_valid = self._entry.data.get(CONFID_ISDAY_VALID, False)
         isday = self._entry.data.get(CONFID_ISDAY, False)
         LOGGER.debug("Filtering for dow %s, isday_valid %s, and isday %s", dow, isday_valid, isday)
@@ -210,10 +211,25 @@ class WeatherActivitiesSensor(CoordinatorEntity, BinarySensorEntity):
         ]
         LOGGER.debug("Found forecasts with isday:\n\t%s", "\n\t".join(map(str, filtered_dd)))
         
+        time_first = self._entry.data.get(CONFID_TIME_FIRST, False)
+        filtered_first: list = []
+        if time_first:
+            hours_prev: dt.datetime|None = None
+            for i in range(len(filtered_activity)):
+                hours_current_str: str = filtered_dd[i].get(ATTR_FORECAST_TIME)
+                hours_current_datetime: datetime = hadt.parse_datetime(hours_current_str)
+                if (hours_current_datetime == hours_prev + dt.timedelta(hours=1)) if hours_prev is not None else True:
+                    hours_prev = hours_current_datetime
+                    filtered_first.append(hours_current_str)
+                else:
+                    break
+        else:
+            filtered_first = filtered_dd
+        
         hrs_min = self._entry.data.get(CONFID_HRS_MIN)
-        if (hrs_min is not None) and len(filtered_dd) < hrs_min:
+        if (hrs_min is not None) and len(filtered_first) < hrs_min:
             return []
-        return filtered_dd
+        return filtered_first
     
     def explain_mismatch(self, forecast, check_time_start: bool = False, check_time_end: bool = True) -> str:
         if forecast is None:
